@@ -1,0 +1,5 @@
+config.ini
+dataset.lnk
+
+*.pyc
+**/*.pyc
