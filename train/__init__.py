@@ -1,2 +1,2 @@
 from Perceptron import Perceptron
-from Viterbi import Viterbi
+from FeatureRichModel import FeatureRichModel

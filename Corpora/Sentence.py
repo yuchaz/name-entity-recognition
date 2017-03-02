@@ -8,7 +8,7 @@ class Sentence(object):
             zip(*[token_tag.split(' ') for token_tag in tokens_tags_pairs])
         self.length = len(self.tokens)
         self.all_tokens = zip(self.tokens, self.pos_tags, self.syn_chunk)
-        self.hidden_cells = [{} for i in range(self.doc_length+2)]
+        self.hidden_cells = [{} for i in range(self.length+2)]
         self.hidden_cells[0] = {START_SYMBOL:Cell(1,'')}
         self.predicted_ner_tags = deque([])
 
@@ -24,7 +24,7 @@ class Sentence(object):
     def decode(self, frm, w_weight_vector):
         self.viterbi_decode(frm, w_weight_vector, 0)
         return list(self.predicted_ner_tags)[1:-1]
-        
+
     def viterbi_decode(self, frm, w_weight_vector, end_index=0):
         if end_index <= self.length:
             tag_choices = frm.ner_tags_set \
@@ -57,7 +57,7 @@ class Sentence(object):
             self.back_propagation(end_index-1)
 
         elif end_index > 0:
-            current_ner_tag = STOP_SYMBOL if end_index == self.length
+            current_ner_tag = STOP_SYMBOL if end_index == self.length \
                                           else self.predicted_ner_tags[0]
             score, back_ner_tag = self.hidden_cells[end_index+1][current_ner_tag].get_tuples()
             self.predicted_ner_tags.appendleft(back_ner_tag)
