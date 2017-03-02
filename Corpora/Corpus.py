@@ -3,6 +3,10 @@ import parsers.corpus_parser as cp
 class Corpus(object):
     def __init__(self, documents):
         self.documents = documents
+        self.token_set = set()
+        self.pos_set = set()
+        self.chunk_set = set()
+        self.calc_sets()
     @classmethod
     def trainCorpus(cls):
         documents = cp.get_train_corpus()
@@ -33,5 +37,14 @@ class Corpus(object):
         return cls(documents)
 
     def __iter__(self):
-        for doc in self.documents:
-            yield doc
+        for sentence in self.documents:
+            yield sentence
+
+    def calc_sets(self):
+        for sentence in self.documents:
+            self.token_set.update(sentence.tokens)
+            self.pos_set.update(sentence.pos_tags)
+            self.chunk_set.update(sentence.syn_chunk)
+
+    def get_sets(self):
+        return self.token_set, self.pos_set, self.chunk_set

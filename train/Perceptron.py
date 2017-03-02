@@ -1,31 +1,28 @@
 import numpy as np
+from scipy.sparse import csr_matrix
 
 class Perceptron(object):
-    def __init__(self, viterbi, epoch, eval_every=10):
-        self.viterbi = viterbi.decode
-        self.phi_feature_trans = viterbi.phi_feature_trans
-        self.feature_dim = viterbi.feature_dim
-        # TODO: above, write the viterbi meet these specs
-
+    def __init__(self, frm, epoch, eval_every=10):
+        self.frm = frm
+        self.feature_transform = frm.global_feature_trans
+        self.feature_dim = frm.feature_dim
         self.epoch = epoch
         self.eval_every = eval_every
-        # TODO: Need to think about how to randomly init w
-        self.w_weight_vector = np.random.rand(self.feature_dim)
-        self.w_average = np.zeros(self.feature_dim)
+        self.w_weight_vector = csr_matrix((1,self.feature_dim))
+        self.w_average = csr_matrix((1,self.feature_dim))
         self.count = 0
 
-    def fit(X,y):
+    def fit(corpus):
         for loop in epoch:
-            for i, x_i in enumerate(X):
-                y_i_predict = self.viterbi(self.w_weight_vector, x_i)
-                # TODO: or regularize it, make it not always need to equal
-                if not y_i_predict == y[i]:
-                    update = self.phi_feature_trans(x_i, y[i]) - \
-                        self.phi_feature_trans(x_i, y_i_predict)
+            for sentence in corpus:
+                predicted_ners = sentence.decode(self.frm, self.w_weight_vector)
+                if not predicted_ners == sentence.ner:
+                    update = self.feature_transform(sentence, sentence.ner) - \
+                        self.feature_transform(sentence, predicted_ners)
                     self.w_weight_vector += update
                     self.w_average += self.w_weight_vector
                     self.count += 1
         self.w_average /= self.count
 
-    def predict(X):
-        return [self.viterbi(self.w_average, x_i) for x_i in X]
+    def predict(corpus):
+        ner_tags = [sentence.decode(self.frm, self.w_average) for sentence in corpus]
