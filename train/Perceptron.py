@@ -11,15 +11,17 @@ class Perceptron(object):
         self.w_weight_vector = csr_matrix((1,self.feature_dim))
         self.w_average = csr_matrix((1,self.feature_dim))
         self.count = 0
+        self.eta = eta
 
     def fit(self,corpus):
         for loop in range(self.epoch):
-            for sentence in corpus:
+            for idx, sentence in enumerate(corpus):
+                print "In loop: {}, sentence: {}, update: {}".format(loop, idx, self.count)
                 predicted_ners = sentence.decode(self.frm, self.w_weight_vector)
                 if not predicted_ners == sentence.ner:
                     update = self.feature_transform(sentence, sentence.ner) - \
                         self.feature_transform(sentence, predicted_ners)
-                    self.w_weight_vector += update * eta
+                    self.w_weight_vector += update * self.eta
                     self.w_average += self.w_weight_vector
                     self.count += 1
         self.w_average /= self.count

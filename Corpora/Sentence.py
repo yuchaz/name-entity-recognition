@@ -23,7 +23,7 @@ class Sentence(object):
 
     def decode(self, frm, w_weight_vector):
         self.viterbi_decode(frm, w_weight_vector, 0)
-        return list(self.predicted_ner_tags)[1:-1]
+        return list(self.predicted_ner_tags)
 
     def viterbi_decode(self, frm, w_weight_vector, end_index=0):
         if end_index <= self.length:
@@ -32,20 +32,20 @@ class Sentence(object):
 
             for target_tag in tag_choices:
                 self.calc_pi_score(target_tag, frm, end_index, w_weight_vector)
-            self.decode(frm, w_weight_vector, end_index+1)
+            self.viterbi_decode(frm, w_weight_vector, end_index+1)
         else:
             self.back_propagation(end_index)
 
-    def calc_pi_score(self, current_ner_tag, frm, end_index):
+    def calc_pi_score(self, current_ner_tag, frm, end_index, w_weight_vector):
         current_idx = end_index+1
         if end_index == 0:
             max_pi_score = frm.score(w_weight_vector, self, current_ner_tag, START_SYMBOL, end_index)
             predicted_prev_tag = START_SYMBOL
         else:
             predicted_prev_tag, max_pi_score = \
-                max(((ner_tag, frm.score(self, current_ner_tag, ner_tag, end_index) + \
+                max(((ner_tag, frm.score(w_weight_vector, self, current_ner_tag, ner_tag, end_index) + \
                                self.hidden_cells[current_idx-1][ner_tag].score)
-                               for ner_tag in self.frm.possible_tag_choices),
+                               for ner_tag in frm.ner_tags_set),
                                key=lambda p:p[1])
         self.store_cells(current_idx, current_ner_tag, max_pi_score, predicted_prev_tag)
 
