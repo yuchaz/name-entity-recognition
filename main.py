@@ -9,13 +9,12 @@ def main():
     feature_model = FeatureRichModel(corpus=train_corpus)
     perceptron = Perceptron(frm=feature_model, eta=learning_rate).fit(train_corpus)
     ner_tags = perceptron.predict(dev_corpus)
-    import pdb; pdb.set_trace()
+    dev_corpus.save('./output_dev.txt')
 
 if __name__ == '__main__':
     try:
         import time
         start = time.time()
-        print start
         main()
         print time.time()-start
     except:

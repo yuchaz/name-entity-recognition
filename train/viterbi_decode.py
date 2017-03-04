@@ -9,6 +9,7 @@ def viterbi_decode(sentence,initialProb,transProb):
         trellis[:, t] = (trellis[:, t-1, None] + transProb).max(0)
         backpt[:, t] = (trellis[:, t-1, None] + transProb).argmax(0)
     tokens = [trellis[:, -1].argmax()]
+    import pdb; pdb.set_trace()
     for i in xrange(len(sentence)-1, 0, -1):
         tokens.append(backpt[tokens[-1], i])
     return tokens[::-1]
