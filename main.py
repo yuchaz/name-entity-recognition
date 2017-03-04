@@ -3,29 +3,28 @@ from Corpora import Corpus
 import argparse
 
 parser = argparse.ArgumentParser(description="Run Name Entity Recognition powered by Feature Rich Model")
-parser.add_argument('--learning-rate', '-l', type=float, default=1,
+parser.add_argument('--lrn-rate', '-l', type=float, default=1,
     help="The learning rate eta of the Perceptron, should be a float.")
 parser.add_argument('--epoch', '-e', type=int, default=5,
     help="The epoch time of the Perceptron, should be an int")
-parser.add_argument('--current_token', nargs='?', default=True, const=False,
+parser.add_argument('--no-c-token', nargs='?', default=False, const=True,
     help="Specify when do not need current token v.s. NER tag feature")
-parser.add_argument('--prev_token', nargs='?', default=True, const=False,
+parser.add_argument('--no-p-token', nargs='?', default=False, const=True,
     help="Specify when do not need previous token v.s. NER tag feature")
-parser.add_argument('--current_pos', nargs='?', default=True, const=False,
+parser.add_argument('--no-c-pos', nargs='?', default=False, const=True,
     help="Specify when do not need current pos v.s. NER tag feature")
-parser.add_argument('--prev_pos', nargs='?', default=True, const=False,
+parser.add_argument('--no-p-pos', nargs='?', default=False, const=True,
     help="Specify when do not need previous pos v.s. NER tag feature")
-parser.add_argument('--current_chunk', nargs='?', default=True, const=False,
+parser.add_argument('--no-c-chunk', nargs='?', default=False, const=True,
     help="Specify when do not need current chunk v.s. NER tag feature")
-parser.add_argument('--prev_chunk', nargs='?', default=True, const=False,
+parser.add_argument('--no-p-chunk', nargs='?', default=False, const=True,
     help="Specify when do not need previous chunk v.s. NER tag feature")
 
 args = parser.parse_args()
-eta = args.learning_rate
+eta = args.lrn_rate
 epoch = args.epoch
 
 def main():
-    import pdb; pdb.set_trace()
     train_corpus = Corpus.trainCorpus()
     dev_corpus = Corpus.devCorpus()
     feature_model = FeatureRichModel(corpus=train_corpus)
