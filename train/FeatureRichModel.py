@@ -13,34 +13,44 @@ class FeatureRichModel(object):
     def __init__(self, corpus):
         self.token_set, self.pos_set, self.chunk_set = corpus.get_sets()
         self.token_set.add(STOP_SYMBOL)
+        self.pos_set.add(STOP_SYMBOL)
+        self.chunk_set.add(STOP_SYMBOL)
         NER_tag_choices = 'ORG PER LOC MISC'.split()
         BIO_choices = 'B I'.split()
         self.ner_tags_set = set(["{}-{}".format(tag[0], tag[1]) for tag in product(BIO_choices, NER_tag_choices)])
         self.ner_tags_set.update([START_SYMBOL, STOP_SYMBOL, 'O'])
         self.token_ner_encoder = OneHotEncoder([token_vs_ner(*token_ner)
             for token_ner in product(self.token_set, self.ner_tags_set)])
-        self.feature_dim = 2*(self.token_ner_encoder.feature_size)
+        self.pos_ner_encoder = OneHotEncoder([token_vs_ner(*pos_ner)
+            for pos_ner in product(self.pos_set, self.ner_tags_set)])
+        self.feature_dim = 2*(self.token_ner_encoder.feature_size) + \
+            2*(self.pos_ner_encoder.feature_size)
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
         self.current_ner_step = 0
         self.prev_ner_step = self.token_ner_encoder.feature_size
+        self.current_ner_pos_step = self.prev_ner_step + self.token_ner_encoder.feature_size
+        self.prev_ner_pos_step = self.current_ner_pos_step + self.pos_ner_encoder.feature_size
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
-        token_curr_ner = self.token_ner_encoder.transform(
-            token_vs_ner(current_token, current_ner_tag), step=self.current_ner_step)
-        token_prev_ner = self.token_ner_encoder.transform(
-            token_vs_ner(current_token, prev_ner_tag), step=self.prev_ner_step)
-        token_curr_ner.update(token_prev_ner)
-        return token_curr_ner
+        current_pos = STOP_SYMBOL if k == sentence.length else sentence.pos_tags[k]
+        local_feature = defaultdict(float)
+        local_feature.update(self.token_ner_encoder.transform(
+            token_vs_ner(current_token, current_ner_tag), step=self.current_ner_step))
+        local_feature.update(self.token_ner_encoder.transform(
+            token_vs_ner(current_token, prev_ner_tag), step=self.prev_ner_step))
+        local_feature.update(self.pos_ner_encoder.transform(
+            token_vs_ner(current_pos, current_ner_tag), step=self.current_ner_pos_step))
+        local_feature.update(self.pos_ner_encoder.transform(
+            token_vs_ner(current_pos, prev_ner_tag), step=self.prev_ner_pos_step))
+        return local_feature
 
     def global_feature_trans(self, sentence, ner_tags):
-        # global_feature = csr_matrix((1,self.feature_dim))
         global_feature = defaultdict(float)
         for idx, ner_tag in enumerate(ner_tags):
             prev_ner_tag = START_SYMBOL if idx == 0 else ner_tags[idx-1]
             global_feature.update(self.local_feature_trans(sentence, ner_tag, prev_ner_tag, idx))
-            # global_feature += self.local_feature_trans(sentence, ner_tag, prev_ner_tag, idx)
         return global_feature
 
     def score(self, w_weight_vector, sentence, current_ner_tag, prev_ner_tag, k):
@@ -73,7 +83,3 @@ class OneHotEncoder(object):
         if not idx == -1:
             feature_dict[idx+step] += 1.
         return feature_dict
-            # row = [0]
-            # col = [idx]
-            # data = [1.]
-            # return csr_matrix( (data, (row, col)), shape=(1,self.feature_size))
