@@ -1,5 +1,3 @@
-from sklearn.preprocessing import LabelBinarizer
-from scipy.sparse import hstack, csr_matrix
 from itertools import product
 from collections import defaultdict
 from train.viterbi_decode import viterbi_decode as viterbi_dc

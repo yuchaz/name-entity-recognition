@@ -3,12 +3,11 @@ from scipy.sparse import csr_matrix
 import datetime
 
 class Perceptron(object):
-    def __init__(self, frm, eta=1, epoch=5, eval_every=10):
+    def __init__(self, frm, eta=1, epoch=5):
         self.frm = frm
         self.feature_transform = frm.global_feature_trans
         self.feature_dim = frm.feature_dim
         self.epoch = epoch
-        self.eval_every = eval_every
         self.w_weight_vector = np.random.rand(1,self.feature_dim)
         self.w_average = csr_matrix((1,self.feature_dim))
         self.count = 0

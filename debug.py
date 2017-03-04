@@ -1,17 +1,13 @@
-from Corpora import Corpus
+import argparse
 
-def main():
-    corpus = Corpus.trainCorpus()
-    import pdb; pdb.set_trace()
+parser = argparse.ArgumentParser(description="Run Name Entity Recognition powered by Feature Rich Model")
+parser.add_argument('--learning-rate', '-l', type=float, default=1,
+    help="The learning rate eta of the Perceptron, should be a float.")
+parser.add_argument('--epoch', '-e', type=int, default=5,
+    help="The epoch time of the Perceptron, should be an int")
+parser.add_argument('--current-token', nargs='?', default=False, const=True)
 
-if __name__ == '__main__':
-    try:
-        import time
-        start = time.time()
-        main()
-        print time.time()-start
-    except:
-        import sys, pdb, traceback
-        type, value, tb = sys.exc_info()
-        traceback.print_exc()
-        pdb.post_mortem(tb)
+args = parser.parse_args()
+
+import pdb; pdb.set_trace()
+print args.sum
