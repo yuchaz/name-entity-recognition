@@ -19,31 +19,45 @@ class FeatureRichModel(object):
         BIO_choices = 'B I'.split()
         self.ner_tags_set = set(["{}-{}".format(tag[0], tag[1]) for tag in product(BIO_choices, NER_tag_choices)])
         self.ner_tags_set.update([START_SYMBOL, STOP_SYMBOL, 'O'])
-        self.token_ner_encoder = OneHotEncoder([token_vs_ner(*token_ner)
+
+        self.token_ner_encoder = OneHotEncoder([sequence_ner_permutizer(*token_ner)
             for token_ner in product(self.token_set, self.ner_tags_set)])
-        self.pos_ner_encoder = OneHotEncoder([token_vs_ner(*pos_ner)
+        self.pos_ner_encoder = OneHotEncoder([sequence_ner_permutizer(*pos_ner)
             for pos_ner in product(self.pos_set, self.ner_tags_set)])
+        self.chunk_ner_encoder = OneHotEncoder([sequence_ner_permutizer(*chunk_ner)
+            for chunk_ner in product(self.chunk_set, self.ner_tags_set)])
+
         self.feature_dim = 2*(self.token_ner_encoder.feature_size) + \
-            2*(self.pos_ner_encoder.feature_size)
+            2*(self.pos_ner_encoder.feature_size) + \
+            2*(self.chunk_ner_encoder.feature_size)
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
+
         self.current_ner_step = 0
         self.prev_ner_step = self.token_ner_encoder.feature_size
         self.current_ner_pos_step = self.prev_ner_step + self.token_ner_encoder.feature_size
         self.prev_ner_pos_step = self.current_ner_pos_step + self.pos_ner_encoder.feature_size
+        self.current_chunk_step = self.prev_ner_pos_step + self.pos_ner_encoder.feature_size
+        self.prev_chunk_step = self.current_chunk_step + self.chunk_ner_encoder.feature_size
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
         current_pos = STOP_SYMBOL if k == sentence.length else sentence.pos_tags[k]
+        current_chunk = STOP_SYMBOL if k == sentence.length else sentence.syn_chunk[k]
+
         local_feature = defaultdict(float)
         local_feature.update(self.token_ner_encoder.transform(
-            token_vs_ner(current_token, current_ner_tag), step=self.current_ner_step))
+            sequence_ner_permutizer(current_token, current_ner_tag), step=self.current_ner_step))
         local_feature.update(self.token_ner_encoder.transform(
-            token_vs_ner(current_token, prev_ner_tag), step=self.prev_ner_step))
+            sequence_ner_permutizer(current_token, prev_ner_tag), step=self.prev_ner_step))
         local_feature.update(self.pos_ner_encoder.transform(
-            token_vs_ner(current_pos, current_ner_tag), step=self.current_ner_pos_step))
+            sequence_ner_permutizer(current_pos, current_ner_tag), step=self.current_ner_pos_step))
         local_feature.update(self.pos_ner_encoder.transform(
-            token_vs_ner(current_pos, prev_ner_tag), step=self.prev_ner_pos_step))
+            sequence_ner_permutizer(current_pos, prev_ner_tag), step=self.prev_ner_pos_step))
+        local_feature.update(self.chunk_ner_encoder.transform(
+            sequence_ner_permutizer(current_chunk, current_ner_tag), step=self.current_chunk_step))
+        local_feature.update(self.chunk_ner_encoder.transform(
+            sequence_ner_permutizer(current_chunk, prev_ner_tag), step=self.prev_chunk_step))
         return local_feature
 
     def global_feature_trans(self, sentence, ner_tags):
@@ -70,8 +84,8 @@ class FeatureRichModel(object):
     def viterbi_decode(self,sentence,init_score,trans_score):
         decode = viterbi_dc(sentence,init_score,trans_score)
         return map(lambda k: self.ner_tags_set[k], decode)
-def token_vs_ner(token, ner):
-    return "{}_vs_{}".format(token, ner)
+def sequence_ner_permutizer(sequence_input, ner):
+    return "{}_vs_{}".format(sequence_input, ner)
 
 class OneHotEncoder(object):
     def __init__(self, list_to_encode):
