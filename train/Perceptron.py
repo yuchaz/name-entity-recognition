@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import csr_matrix
+import datetime
 
 class Perceptron(object):
     def __init__(self, frm, eta=1, epoch=5, eval_every=10):
@@ -16,8 +17,13 @@ class Perceptron(object):
     def fit(self,corpus):
         for loop in range(self.epoch):
             for idx, sentence in enumerate(corpus):
-                print "In loop: {}, sentence: {}, update: {}".format(loop, idx, self.count)
                 predicted_ners = sentence.decode(self.frm, self.w_weight_vector)
+                if idx % 1000 == 0:
+                    print "{}: In loop: {}, sentence: {}, update: {}".format(
+                        datetime.datetime.now().isoformat(),
+                        loop, idx, self.count)
+                    print predicted_ners
+
                 if not predicted_ners == sentence.ner:
                     update = self.feature_transform(sentence, sentence.ner) - \
                         self.feature_transform(sentence, predicted_ners)

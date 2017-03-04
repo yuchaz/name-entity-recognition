@@ -15,6 +15,7 @@ if __name__ == '__main__':
     try:
         import time
         start = time.time()
+        print start
         main()
         print time.time()-start
     except:

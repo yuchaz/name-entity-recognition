@@ -2,6 +2,8 @@ from sklearn.preprocessing import LabelBinarizer
 from scipy.sparse import hstack, csr_matrix
 from itertools import product
 from collections import defaultdict
+from train.viterbi_decode import viterbi_decode as viterbi_dc
+import numpy as np
 
 START_SYMBOL = '<START>'
 STOP_SYMBOL = '<STOP>'
@@ -19,6 +21,7 @@ class FeatureRichModel(object):
             for token_ner in product(self.token_set, self.ner_tags_set)])
         self.feature_dim = 2*(self.token_ner_encoder.feature_size)
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
+        self.ner_tags_set = list(self.ner_tags_set)
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
@@ -35,9 +38,19 @@ class FeatureRichModel(object):
 
     def score(self, w_weight_vector, sentence, current_ner_tag, prev_ner_tag, k):
         return w_weight_vector.dot(self.local_feature_trans(
-            sentence, current_ner_tag, prev_ner_tag, k).transpose())
+            sentence, current_ner_tag, prev_ner_tag, k).transpose()).toarray()[0,0]
 
+    def generate_init_score(self,w_weight_vector,sentence):
+        init_score = [self.score(w_weight_vector,sentence,ner_tag,START_SYMBOL,0) for ner_tag in self.ner_tags_set]
+        return np.array(init_score)
 
+    def generate_trans_score(self,w_weight_vector,sentence):
+        trans_score = [[self.score(w_weight_vector,sentence,ner_tag,prev_ner_tag,0)
+            for ner_tag in self.ner_tags_set] for prev_ner_tag in self.ner_tags_set]
+        return np.array(trans_score)
+    def viterbi_decode(self,sentence,init_score,trans_score):
+        decode = viterbi_dc(sentence,init_score,trans_score)
+        return map(lambda k: self.ner_tags_set[k], decode)
 def token_vs_ner(token, ner):
     return "{}_vs_{}".format(token, ner)
 

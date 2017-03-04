@@ -22,48 +22,50 @@ class Sentence(object):
         return self.all_tokens[index]
 
     def decode(self, frm, w_weight_vector):
-        self.viterbi_decode(frm, w_weight_vector, 0)
-        return list(self.predicted_ner_tags)
+        init_score = frm.generate_init_score(w_weight_vector,self)
+        trans_score = frm.generate_trans_score(w_weight_vector,self)
+        return frm.viterbi_decode(self,init_score,trans_score)
+        # return list(self.predicted_ner_tags)
 
-    def viterbi_decode(self, frm, w_weight_vector, end_index=0):
-        if end_index <= self.length:
-            tag_choices = frm.ner_tags_set \
-                if end_index != self.length else [STOP_SYMBOL]
-
-            for target_tag in tag_choices:
-                self.calc_pi_score(target_tag, frm, end_index, w_weight_vector)
-            self.viterbi_decode(frm, w_weight_vector, end_index+1)
-        else:
-            self.back_propagation(end_index)
-
-    def calc_pi_score(self, current_ner_tag, frm, end_index, w_weight_vector):
-        current_idx = end_index+1
-        if end_index == 0:
-            max_pi_score = frm.score(w_weight_vector, self, current_ner_tag, START_SYMBOL, end_index)
-            predicted_prev_tag = START_SYMBOL
-        else:
-            predicted_prev_tag, max_pi_score = \
-                max(((ner_tag, frm.score(w_weight_vector, self, current_ner_tag, ner_tag, end_index) + \
-                               self.hidden_cells[current_idx-1][ner_tag].score)
-                               for ner_tag in frm.ner_tags_set),
-                               key=lambda p:p[1])
-        self.store_cells(current_idx, current_ner_tag, max_pi_score, predicted_prev_tag)
-
-    def store_cells(self,idx,ner_tag,score,argmax_ner_tag):
-        self.hidden_cells[idx].update({ner_tag: Cell(score, argmax_ner_tag)})
-
-    def back_propagation(self, end_index):
-        if end_index > self.length:
-            self.back_propagation(end_index-1)
-
-        elif end_index > 0:
-            current_ner_tag = STOP_SYMBOL if end_index == self.length \
-                                          else self.predicted_ner_tags[0]
-            score, back_ner_tag = self.hidden_cells[end_index+1][current_ner_tag].get_tuples()
-            self.predicted_ner_tags.appendleft(back_ner_tag)
-            self.back_propagation(end_index-1)
-        else:
-            return
+    # def viterbi_decode(self, frm, w_weight_vector, end_index=0):
+    #     if end_index <= self.length:
+    #         tag_choices = frm.ner_tags_set \
+    #             if end_index != self.length else [STOP_SYMBOL]
+    #
+    #         for target_tag in tag_choices:
+    #             self.calc_pi_score(target_tag, frm, end_index, w_weight_vector)
+    #         self.viterbi_decode(frm, w_weight_vector, end_index+1)
+    #     else:
+    #         self.back_propagation(end_index)
+    #
+    # def calc_pi_score(self, current_ner_tag, frm, end_index, w_weight_vector):
+    #     current_idx = end_index+1
+    #     if end_index == 0:
+    #         max_pi_score = frm.score(w_weight_vector, self, current_ner_tag, START_SYMBOL, end_index)
+    #         predicted_prev_tag = START_SYMBOL
+    #     else:
+    #         predicted_prev_tag, max_pi_score = \
+    #             max(((ner_tag, frm.score(w_weight_vector, self, current_ner_tag, ner_tag, end_index) + \
+    #                            self.hidden_cells[current_idx-1][ner_tag].score)
+    #                            for ner_tag in frm.ner_tags_set),
+    #                            key=lambda p:p[1])
+    #     self.store_cells(current_idx, current_ner_tag, max_pi_score, predicted_prev_tag)
+    #
+    # def store_cells(self,idx,ner_tag,score,argmax_ner_tag):
+    #     self.hidden_cells[idx].update({ner_tag: Cell(score, argmax_ner_tag)})
+    #
+    # def back_propagation(self, end_index):
+    #     if end_index > self.length:
+    #         self.back_propagation(end_index-1)
+    #
+    #     elif end_index > 0:
+    #         current_ner_tag = STOP_SYMBOL if end_index == self.length \
+    #                                       else self.predicted_ner_tags[0]
+    #         score, back_ner_tag = self.hidden_cells[end_index+1][current_ner_tag].get_tuples()
+    #         self.predicted_ner_tags.appendleft(back_ner_tag)
+    #         self.back_propagation(end_index-1)
+    #     else:
+    #         return
 
 
 class Cell(object):
