@@ -22,23 +22,32 @@ class FeatureRichModel(object):
         self.feature_dim = 2*(self.token_ner_encoder.feature_size)
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
+        self.current_ner_step = 0
+        self.prev_ner_step = self.token_ner_encoder.feature_size
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
-        token_curr_ner = self.token_ner_encoder.transform(token_vs_ner(current_token, current_ner_tag))
-        token_prev_ner = self.token_ner_encoder.transform(token_vs_ner(current_token, prev_ner_tag))
-        return hstack([token_curr_ner, token_prev_ner], format='csr')
+        token_curr_ner = self.token_ner_encoder.transform(
+            token_vs_ner(current_token, current_ner_tag), step=self.current_ner_step)
+        token_prev_ner = self.token_ner_encoder.transform(
+            token_vs_ner(current_token, prev_ner_tag), step=self.prev_ner_step)
+        token_curr_ner.update(token_prev_ner)
+        return token_curr_ner
 
     def global_feature_trans(self, sentence, ner_tags):
-        global_feature = csr_matrix((1,self.feature_dim))
+        # global_feature = csr_matrix((1,self.feature_dim))
+        global_feature = defaultdict(float)
         for idx, ner_tag in enumerate(ner_tags):
             prev_ner_tag = START_SYMBOL if idx == 0 else ner_tags[idx-1]
-            global_feature += self.local_feature_trans(sentence, ner_tag, prev_ner_tag, idx)
+            global_feature.update(self.local_feature_trans(sentence, ner_tag, prev_ner_tag, idx))
+            # global_feature += self.local_feature_trans(sentence, ner_tag, prev_ner_tag, idx)
         return global_feature
 
     def score(self, w_weight_vector, sentence, current_ner_tag, prev_ner_tag, k):
-        return w_weight_vector.dot(self.local_feature_trans(
-            sentence, current_ner_tag, prev_ner_tag, k).transpose()).toarray()[0,0]
+        score = 0
+        for idx in self.local_feature_trans(sentence, current_ner_tag, prev_ner_tag, k).keys():
+            score += w_weight_vector[0,idx]
+        return score
 
     def generate_init_score(self,w_weight_vector,sentence):
         init_score = [self.score(w_weight_vector,sentence,ner_tag,START_SYMBOL,0) for ner_tag in self.ner_tags_set]
@@ -58,10 +67,13 @@ class OneHotEncoder(object):
     def __init__(self, list_to_encode):
         self.feature_dict = dict(zip(list_to_encode, range(len(list_to_encode))))
         self.feature_size = len(list_to_encode)
-    def transform(self, token):
+    def transform(self, token, step=0):
+        feature_dict = defaultdict(float)
         idx = self.feature_dict.get(token, -1)
         if not idx == -1:
-            row = [0]
-            col = [idx]
-            data = [1.]
-            return csr_matrix( (data, (row, col)), shape=(1,self.feature_size))
+            feature_dict[idx+step] += 1.
+        return feature_dict
+            # row = [0]
+            # col = [idx]
+            # data = [1.]
+            # return csr_matrix( (data, (row, col)), shape=(1,self.feature_size))

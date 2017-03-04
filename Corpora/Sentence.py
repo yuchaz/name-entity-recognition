@@ -1,6 +1,7 @@
 from collections import deque
 START_SYMBOL = '<START>'
 STOP_SYMBOL = '<STOP>'
+import time
 
 class Sentence(object):
     def __init__(self, tokens_tags_pairs):
@@ -24,9 +25,11 @@ class Sentence(object):
     def decode(self, frm, w_weight_vector):
         init_score = frm.generate_init_score(w_weight_vector,self)
         trans_score = frm.generate_trans_score(w_weight_vector,self)
-        return frm.viterbi_decode(self,init_score,trans_score)
-        # return list(self.predicted_ner_tags)
-
+        decoded = frm.viterbi_decode(self,init_score,trans_score)
+        return decoded
+    #     self.viterbi_decode(self,init_score,trans_score)
+    #     return list(self.predicted_ner_tags)
+    #
     # def viterbi_decode(self, frm, w_weight_vector, end_index=0):
     #     if end_index <= self.length:
     #         tag_choices = frm.ner_tags_set \
