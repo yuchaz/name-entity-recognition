@@ -44,10 +44,12 @@ def get_small_dev_corpus():
 def get_small_test_corpus():
     return corpus_parser(path_dict["s_test"])
 
-def get_corpus_by_tag(*tags):
-    path_list = [path_dict.get(tag) for tag in list(tags)]
-    if len(path_list) == 0: raise ValueError('You should only input \
-        train, dev, test, s_train, s_dev or s_test corpus')
+def get_corpus_by_tag(*tags, **kwargs):
+    is_small = kwargs.pop('is_small', False)
+    path_list = [path_dict.get(tag) for tag in list(tags)] \
+        if not is_small else [path_dict.get("s_{}".format(tag)) for tag in list(tags)]
+    if len(path_list) == 0:
+        raise ValueError('You should only input train, dev, test')
     return corpus_parser(*path_list)
 
 if __name__ == '__main__':
