@@ -25,11 +25,11 @@ class Corpus(object):
         return cls(documents)
     @classmethod
     def sDevCorpus(cls):
-        documents = cp.get_small_dev_set_path()
+        documents = cp.get_small_dev_corpus()
         return cls(documents)
     @classmethod
     def sTestCorpus(cls):
-        documents = cp.get_small_test_set_path()
+        documents = cp.get_small_test_corpus()
         return cls(documents)
     @classmethod
     def combinedCorpus(cls, *tags):
@@ -48,3 +48,14 @@ class Corpus(object):
 
     def get_sets(self):
         return self.token_set, self.pos_set, self.chunk_set
+
+    def save(self,path):
+        with open(path, 'w') as outfn:
+            for sentence in self.documents:
+                map(lambda k: outfn.write(
+                    " ".join(k)+"\n"),
+                    zip(sentence.tokens, sentence.pos_tags,
+                        sentence.syn_chunk, sentence.ner,
+                        list(sentence.predicted_ner_tags)))
+                outfn.write('\n')
+        outfn.close()
