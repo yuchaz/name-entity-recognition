@@ -19,7 +19,7 @@ parser.add_argument('--no-cchunk', nargs='?', default=True, const=False,
     help="Specify when do not need current chunk v.s. NER tag feature")
 parser.add_argument('--no-pchunk', nargs='?', default=True, const=False,
     help="Specify when do not need previous chunk v.s. NER tag feature")
-parser.add_argument('--test', '-T', nargs='?', default=True, const=False,
+parser.add_argument('--test', '-T', nargs='?', default=False, const=True,
     help="Specify when switch to test mode.")
 parser.add_argument('--small', '-S', nargs='?', default=False, const=True,
     help="Specify when use small corpus.")
