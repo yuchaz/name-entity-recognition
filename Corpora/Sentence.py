@@ -28,10 +28,6 @@ class Sentence(object):
         self.hidden_cells[0] = {START_SYMBOL:Cell(1,'')}
 
     def decode(self, frm, w_weight_vector):
-        # init_score = frm.generate_init_score(w_weight_vector,self)
-        # trans_score = frm.generate_trans_score(w_weight_vector,self)
-        # decoded = frm.viterbi_decode(self,init_score,trans_score)
-        # return decoded
         self.init_before_decode()
         self.viterbi_decode(frm, w_weight_vector)
         return list(self.predicted_ner_tags)

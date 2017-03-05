@@ -1,6 +1,5 @@
 from itertools import product
 from collections import defaultdict
-from train.viterbi_decode import viterbi_decode as viterbi_dc
 import numpy as np
 
 START_SYMBOL = '<START>'
@@ -84,17 +83,6 @@ class FeatureRichModel(object):
             score += w_weight_vector[0,idx]
         return score
 
-    def generate_init_score(self,w_weight_vector,sentence):
-        init_score = [self.score(w_weight_vector,sentence,ner_tag,START_SYMBOL,0) for ner_tag in self.ner_tags_set]
-        return np.array(init_score)
-
-    def generate_trans_score(self,w_weight_vector,sentence):
-        trans_score = [[self.score(w_weight_vector,sentence,ner_tag,prev_ner_tag,0)
-            for ner_tag in self.ner_tags_set] for prev_ner_tag in self.ner_tags_set]
-        return np.array(trans_score)
-    def viterbi_decode(self,sentence,init_score,trans_score):
-        decode = viterbi_dc(sentence,init_score,trans_score)
-        return map(lambda k: self.ner_tags_set[k], decode)
 def sequence_ner_permutizer(sequence_input, ner):
     return "{}_vs_{}".format(sequence_input, ner)
 
