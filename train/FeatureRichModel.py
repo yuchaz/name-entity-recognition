@@ -23,51 +23,72 @@ class FeatureRichModel(object):
         self.chunk_ner_encoder = OneHotEncoder([sequence_ner_permutizer(*chunk_ner)
             for chunk_ner in product(self.chunk_set, self.ner_tags_set)])
 
-        self.feature_dim = 2*(self.token_ner_encoder.feature_size) + \
-            2*(self.pos_ner_encoder.feature_size) + \
-            2*(self.chunk_ner_encoder.feature_size)
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
 
         self.if_current_token = kwargs.get('if_current_token', True)
         self.if_prev_token = kwargs.get('if_prev_token', True)
+        self.if_future_token = kwargs.get('if_future_token', True)
         self.if_current_pos = kwargs.get('if_current_pos', True)
         self.if_prev_pos = kwargs.get('if_prev_pos', True)
+        self.if_future_pos = kwargs.get('if_future_pos', True)
         self.if_current_chunk = kwargs.get('if_current_chunk', True)
         self.if_prev_chunk = kwargs.get('if_prev_chunk', True)
+        self.if_future_chunk = kwargs.get('if_future_chunk', True)
 
         self.current_token_size = self.token_ner_encoder.feature_size if self.if_current_token else 0
         self.prev_token_size = self.token_ner_encoder.feature_size if self.if_prev_token else 0
+        self.future_token_size = self.token_ner_encoder.feature_size if self.if_future_token else 0
         self.current_pos_size = self.pos_ner_encoder.feature_size if self.if_current_pos else 0
         self.prev_pos_size = self.pos_ner_encoder.feature_size if self.if_prev_pos else 0
+        self.future_pos_size = self.pos_ner_encoder.feature_size if self.if_future_pos else 0
         self.current_chunk_size = self.chunk_ner_encoder.feature_size if self.if_current_chunk else 0
         self.prev_chunk_size = self.chunk_ner_encoder.feature_size if self.if_prev_chunk else 0
+        self.future_chunk_size = self.chunk_ner_encoder.feature_size if self.if_future_chunk else 0
 
-        self.current_ner_step = 0
-        self.prev_ner_step = self.current_token_size
-        self.current_ner_pos_step = self.prev_ner_step + self.prev_token_size
-        self.prev_ner_pos_step = self.current_ner_pos_step + self.current_pos_size
-        self.current_chunk_step = self.prev_ner_pos_step + self.prev_pos_size
+        self.current_token_step = 0
+        self.prev_token_step = self.current_token_size
+        self.future_token_step = self.prev_token_step + self.prev_token_size
+        self.current_pos_step = self.future_token_step + self.future_token_size
+        self.prev_pos_step = self.current_pos_step + self.current_pos_size
+        self.future_pos_step = self.prev_pos_step + self.prev_pos_size
+        self.current_chunk_step = self.future_pos_step + self.future_pos_size
         self.prev_chunk_step = self.current_chunk_step + self.current_chunk_size
+        self.future_chunk_step = self.prev_chunk_step + self.prev_chunk_size
+
+        self.feature_dim = self.future_chunk_step + self.future_chunk_size
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
         current_pos = STOP_SYMBOL if k == sentence.length else sentence.pos_tags[k]
         current_chunk = STOP_SYMBOL if k == sentence.length else sentence.syn_chunk[k]
+        prev_token = START_SYMBOL if k <= 0 else sentence.tokens[k-1]
+        prev_pos = START_SYMBOL if k <= 0 else sentence.pos_tags[k-1]
+        prev_chunk = START_SYMBOL if k <= 0 else sentence.syn_chunk[k-1]
 
         local_feature = defaultdict(float)
+
         if self.if_current_token: local_feature.update(self.token_ner_encoder.transform(
-            sequence_ner_permutizer(current_token, current_ner_tag), step=self.current_ner_step))
+            sequence_ner_permutizer(current_token, current_ner_tag), step=self.current_token_step))
         if self.if_prev_token: local_feature.update(self.token_ner_encoder.transform(
-            sequence_ner_permutizer(current_token, prev_ner_tag), step=self.prev_ner_step))
+            sequence_ner_permutizer(prev_token, current_ner_tag), step=self.prev_token_step))
+        if self.if_future_token: local_feature.update(self.token_ner_encoder.transform(
+            sequence_ner_permutizer(current_token, prev_ner_tag), step=self.future_token_step))
+
         if self.if_current_pos: local_feature.update(self.pos_ner_encoder.transform(
-            sequence_ner_permutizer(current_pos, current_ner_tag), step=self.current_ner_pos_step))
+            sequence_ner_permutizer(current_pos, current_ner_tag), step=self.current_pos_step))
         if self.if_prev_pos: local_feature.update(self.pos_ner_encoder.transform(
-            sequence_ner_permutizer(current_pos, prev_ner_tag), step=self.prev_ner_pos_step))
+            sequence_ner_permutizer(prev_pos, current_ner_tag), step=self.prev_pos_step))
+        if self.if_future_pos: local_feature.update(self.pos_ner_encoder.transform(
+            sequence_ner_permutizer(current_pos, prev_ner_tag), step=self.future_pos_step))
+
         if self.if_current_chunk: local_feature.update(self.chunk_ner_encoder.transform(
             sequence_ner_permutizer(current_chunk, current_ner_tag), step=self.current_chunk_step))
         if self.if_prev_chunk: local_feature.update(self.chunk_ner_encoder.transform(
-            sequence_ner_permutizer(current_chunk, prev_ner_tag), step=self.prev_chunk_step))
+            sequence_ner_permutizer(prev_chunk, current_ner_tag), step=self.prev_chunk_step))
+        if self.if_future_chunk: local_feature.update(self.chunk_ner_encoder.transform(
+            sequence_ner_permutizer(current_chunk, prev_ner_tag), step=self.future_chunk_step))
+
         return local_feature
 
     def global_feature_trans(self, sentence, ner_tags):
