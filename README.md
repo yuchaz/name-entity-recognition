@@ -1,5 +1,10 @@
 README.md file for CSE_517 assignment 4: Structured Learning with Feature-Rich Models.
 
+###Run Best Model and print result
+1. Run `source best_model.sh`
+1. Run `source eval.sh`
+1. Run `source read.sh`
+
 ###Data Location
 1. First run `cp config.ini.template config.ini`
 1. Change the `data_dir` attributes in `config.ini` file to the data location you place.
