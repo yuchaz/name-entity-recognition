@@ -9,3 +9,5 @@ output*
 .ftpconfig
 .ftpignore
 run.sh
+eval.sh
+read.sh
