@@ -72,6 +72,17 @@ class Sentence(object):
         else:
             return
 
+    def confusion_matrix(self,frm):
+        vocab_size = len(frm.ner_tags_set)
+        confusion_matrix = [[0 for i in range(vocab_size)] for j in range(vocab_size)]
+        actual_ner_tags = self.ner
+        for idx, pred_ner in enumerate(self.predicted_ner_tags):
+            actu_ner = self.ner[idx]
+            pred_ner_idx = frm.ner_tags_inverse_dict.get(pred_ner)
+            actu_ner_idx = frm.ner_tags_inverse_dict.get(actu_ner)
+            confusion_matrix[pred_ner_idx][actu_ner_idx] += 1
+        self.confusion_matrix = confusion_matrix
+        return self.confusion_matrix
 
 class Cell(object):
     def __init__(self, score, back_ner_tag):

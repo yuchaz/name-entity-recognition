@@ -32,14 +32,18 @@ parser.add_argument('--test', '-T', nargs='?', default=False, const=True,
 parser.add_argument('--small', '-S', nargs='?', default=False, const=True,
     help="Specify when use small corpus.")
 
+parser.add_argument('--save-cm', '-s', nargs='?', default=False, const=True,
+    help="Specify when want to save confusion matrix")
+
 args = parser.parse_args()
 eta = args.lrn_rate
 epoch = args.epoch
 is_test = args.test
 is_small = args.small
+if_save_confusion_matrix = args.save_cm
 feature_dict = {
     "if_current_token": args.no_ctoken, "if_prev_token": args.no_ptoken, "if_future_token": args.no_ftoken,
-    "if_current_pos": args.no_cpos, "if_prev_pos": args.no_ppos, "if_future_token": args.no_fpos,
+    "if_current_pos": args.no_cpos, "if_prev_pos": args.no_ppos, "if_future_pos": args.no_fpos,
     "if_current_chunk": args.no_cchunk, "if_prev_chunk": args.no_pchunk, "if_future_chunk": args.no_fchunk
 }
 
@@ -59,6 +63,7 @@ def main():
         int(feature_dict["if_current_chunk"]),int(feature_dict["if_prev_chunk"]), int(feature_dict["if_future_chunk"]))
     eval_corpus.save('./output/{}_eta_{}_epoch_{}_{}.txt'.format(
         eval_name, eta, epoch, feature_code))
+    if if_save_confusion_matrix: eval_corpus.plot_confusion_matrix(frm=feature_model)
 
 if __name__ == '__main__':
     try:

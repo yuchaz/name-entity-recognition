@@ -25,6 +25,7 @@ class FeatureRichModel(object):
 
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
+        self.ner_tags_inverse_dict = {val:idx for idx,val in enumerate(self.ner_tags_set)}
 
         self.if_current_token = kwargs.get('if_current_token', True)
         self.if_prev_token = kwargs.get('if_prev_token', True)
