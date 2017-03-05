@@ -6,9 +6,8 @@ import numpy as np
 START_SYMBOL = '<START>'
 STOP_SYMBOL = '<STOP>'
 
-
 class FeatureRichModel(object):
-    def __init__(self, corpus):
+    def __init__(self, corpus, **kwargs):
         self.token_set, self.pos_set, self.chunk_set = corpus.get_sets()
         self.token_set.add(STOP_SYMBOL)
         self.pos_set.add(STOP_SYMBOL)
@@ -31,12 +30,27 @@ class FeatureRichModel(object):
         self.ner_tags_set.difference_update([START_SYMBOL, STOP_SYMBOL])
         self.ner_tags_set = list(self.ner_tags_set)
 
+        self.if_current_token = kwargs.get('if_current_token', True)
+        self.if_prev_token = kwargs.get('if_prev_token', True)
+        self.if_current_pos = kwargs.get('if_current_pos', True)
+        self.if_prev_pos = kwargs.get('if_prev_pos', True)
+        self.if_current_chunk = kwargs.get('if_current_chunk', True)
+        self.if_prev_chunk = kwargs.get('if_prev_chunk', True)
+
+        self.current_token_size = self.token_ner_encoder.feature_size if self.if_current_token else 0
+        self.prev_token_size = self.token_ner_encoder.feature_size if self.if_prev_token else 0
+        self.current_pos_size = self.pos_ner_encoder.feature_size if self.if_current_pos else 0
+        self.prev_pos_size = self.pos_ner_encoder.feature_size if self.if_prev_pos else 0
+        self.current_chunk_size = self.chunk_ner_encoder.feature_size if self.if_current_chunk else 0
+        self.prev_chunk_size = self.chunk_ner_encoder.feature_size if self.if_prev_chunk else 0
+
         self.current_ner_step = 0
-        self.prev_ner_step = self.token_ner_encoder.feature_size
-        self.current_ner_pos_step = self.prev_ner_step + self.token_ner_encoder.feature_size
-        self.prev_ner_pos_step = self.current_ner_pos_step + self.pos_ner_encoder.feature_size
-        self.current_chunk_step = self.prev_ner_pos_step + self.pos_ner_encoder.feature_size
-        self.prev_chunk_step = self.current_chunk_step + self.chunk_ner_encoder.feature_size
+        self.prev_ner_step = self.current_token_size
+        self.current_ner_pos_step = self.prev_ner_step + self.prev_token_size
+        self.prev_ner_pos_step = self.current_ner_pos_step + self.current_pos_size
+        self.current_chunk_step = self.prev_ner_pos_step + self.prev_pos_size
+        self.prev_chunk_step = self.current_chunk_step + self.current_chunk_size
+        import pdb; pdb.set_trace()
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]
@@ -44,17 +58,17 @@ class FeatureRichModel(object):
         current_chunk = STOP_SYMBOL if k == sentence.length else sentence.syn_chunk[k]
 
         local_feature = defaultdict(float)
-        local_feature.update(self.token_ner_encoder.transform(
+        if self.if_current_token: local_feature.update(self.token_ner_encoder.transform(
             sequence_ner_permutizer(current_token, current_ner_tag), step=self.current_ner_step))
-        local_feature.update(self.token_ner_encoder.transform(
+        if self.if_prev_token: local_feature.update(self.token_ner_encoder.transform(
             sequence_ner_permutizer(current_token, prev_ner_tag), step=self.prev_ner_step))
-        local_feature.update(self.pos_ner_encoder.transform(
+        if self.if_current_pos: local_feature.update(self.pos_ner_encoder.transform(
             sequence_ner_permutizer(current_pos, current_ner_tag), step=self.current_ner_pos_step))
-        local_feature.update(self.pos_ner_encoder.transform(
+        if self.if_prev_pos: local_feature.update(self.pos_ner_encoder.transform(
             sequence_ner_permutizer(current_pos, prev_ner_tag), step=self.prev_ner_pos_step))
-        local_feature.update(self.chunk_ner_encoder.transform(
+        if self.if_current_chunk: local_feature.update(self.chunk_ner_encoder.transform(
             sequence_ner_permutizer(current_chunk, current_ner_tag), step=self.current_chunk_step))
-        local_feature.update(self.chunk_ner_encoder.transform(
+        if self.if_prev_chunk: local_feature.update(self.chunk_ner_encoder.transform(
             sequence_ner_permutizer(current_chunk, prev_ner_tag), step=self.prev_chunk_step))
         return local_feature
 
