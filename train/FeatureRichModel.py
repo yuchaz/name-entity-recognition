@@ -50,7 +50,6 @@ class FeatureRichModel(object):
         self.prev_ner_pos_step = self.current_ner_pos_step + self.current_pos_size
         self.current_chunk_step = self.prev_ner_pos_step + self.prev_pos_size
         self.prev_chunk_step = self.current_chunk_step + self.current_chunk_size
-        import pdb; pdb.set_trace()
 
     def local_feature_trans(self, sentence, current_ner_tag, prev_ner_tag, k):
         current_token = STOP_SYMBOL if k == sentence.length else sentence.tokens[k]

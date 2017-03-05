@@ -5,3 +5,7 @@ dataset.lnk
 **/*.pyc
 
 output*
+
+.ftpconfig
+.ftpignore
+run.sh

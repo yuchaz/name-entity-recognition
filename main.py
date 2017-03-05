@@ -45,8 +45,12 @@ def main():
     feature_model = FeatureRichModel(corpus=train_corpus, **feature_dict)
     perceptron = Perceptron(frm=feature_model, eta=eta, epoch=epoch).fit(train_corpus)
     ner_tags = perceptron.predict(eval_corpus)
-    eval_corpus.save('./output/{}_eta_{}_epoch_{}.txt'.format(
-        eval_name, eta, epoch))
+    feature_code = "{}{}{}{}{}{}".format(
+        int(feature_dict["if_current_token"]),int(feature_dict["if_prev_token"]),
+        int(feature_dict["if_current_pos"]),int(feature_dict["if_prev_pos"]),
+        int(feature_dict["if_current_chunk"]),int(feature_dict["if_prev_chunk"]))
+    eval_corpus.save('./output/{}_eta_{}_epoch_{}_{}.txt'.format(
+        eval_name, eta, epoch, feature_code))
 
 if __name__ == '__main__':
     try:
